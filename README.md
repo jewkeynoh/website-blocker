@@ -18,7 +18,7 @@ A simple Flask application that allows users to block specific websites by modif
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/website-blocker.git
+   git clone https://github.com/jewkeynoh/website-blocker.git
    cd website-blocker
    ```
 2. Set up a virtual environment:
