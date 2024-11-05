@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, flash
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -14,39 +14,69 @@ if os.name == 'nt':  # Windows
 else:  # Assume Unix-like (Linux or macOS)
     HOSTS_FILE_PATH = "/etc/hosts"
 
-PASSWORD = "your_password"
+PASSWORD = "admin123"
+
+def is_running_on_pythonanywhere():
+    """Check if the app is running on PythonAnywhere."""
+    return 'PYTHONANYWHERE_DOMAIN' in os.environ
 
 def is_blocking_enabled():
-    with open(HOSTS_FILE_PATH, "r") as file:
-        content = file.read()
-        return any(site in content for site in BLOCKED_SITES)
+    """Check if blocking is currently enabled by reading the hosts file."""
+    if not is_running_on_pythonanywhere():
+        try:
+            with open(HOSTS_FILE_PATH, "r") as file:
+                content = file.read()
+                return any(site in content for site in BLOCKED_SITES)
+        except Exception as e:
+            print(f"Error reading hosts file: {e}")
+            return False
+    # For restricted environments, just return False or mock the output
+    return False
 
 def toggle_blocking(enable=True):
-    if enable:
-        with open(HOSTS_FILE_PATH, "a") as file:
-            for site in BLOCKED_SITES:
-                file.write(f"{REDIRECT_IP} {site}\n")
+    """Toggle blocking of the specified websites."""
+    if not is_running_on_pythonanywhere():
+        try:
+            if enable:
+                print("Attempting to block sites...")
+                with open(HOSTS_FILE_PATH, "a") as file:
+                    for site in BLOCKED_SITES:
+                        file.write(f"{REDIRECT_IP} {site}\n")
+                flash("Blocking enabled", "success")  # Flash success message
+                print("Sites blocked successfully.")
+            else:
+                print("Attempting to unblock sites...")
+                with open(HOSTS_FILE_PATH, "r+") as file:
+                    lines = file.readlines()
+                    file.seek(0)
+                    for line in lines:
+                        if not any(site in line for site in BLOCKED_SITES):
+                            file.write(line)
+                    file.truncate()
+                flash("Blocking disabled", "success")  # Flash success message
+                print("Sites unblocked successfully.")
+        except PermissionError:
+            flash("Permission denied: unable to modify the hosts file. Please run as Administrator.", "error")
+        except Exception as e:
+            flash(f"Error modifying hosts file: {e}", "error")
     else:
-        with open(HOSTS_FILE_PATH, "r+") as file:
-            lines = file.readlines()
-            file.seek(0)
-            for line in lines:
-                if not any(site in line for site in BLOCKED_SITES):
-                    file.write(line)
-            file.truncate()
+        # Simulated blocking for restricted environments
+        if enable:
+            flash("Simulated blocking enabled - not modifying hosts file", "info")
+        else:
+            flash("Simulated blocking disabled - not modifying hosts file", "info")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """Render the main page and handle form submissions."""
     if request.method == "POST":
         action = request.form.get("action")
         password = request.form.get("password")
         if password == PASSWORD:
             if action == "block":
                 toggle_blocking(True)
-                flash("Blocking enabled", "success")
             elif action == "unblock":
                 toggle_blocking(False)
-                flash("Blocking disabled", "success")
         else:
             flash("Incorrect password", "error")
     return render_template("index.html", is_blocking=is_blocking_enabled())
