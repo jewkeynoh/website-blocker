@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Blocker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/global.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-lg rounded-lg p-8 max-w-sm w-full">
+        <h1 class="text-2xl font-bold text-center mb-4">Website Blocker</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4">
+              {% for category, message in messages %}
+                <div class="p-2 text-center text-sm rounded {{ 'bg-green-100 text-green-700' if category == 'success' else 'bg-red-100 text-red-700' }}">
+                    {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/" method="POST" class="space-y-4">
+            <div>
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter password"
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    required
+                />
+            </div>
+            
+            <div class="flex justify-between">
+                <button
+                    type="submit"
+                    name="action"
+                    value="block"
+                    class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600"
+                    {% if is_blocking %}disabled{% endif %}
+                >
+                    Block
+                </button>
+
+                <button
+                    type="submit"
+                    name="action"
+                    value="unblock"
+                    class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
+                    {% if not is_blocking %}disabled{% endif %}
+                >
+                    Unblock
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
